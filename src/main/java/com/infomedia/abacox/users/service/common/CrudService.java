@@ -1,6 +1,5 @@
 package com.infomedia.abacox.users.service.common;
 
-import com.infomedia.abacox.users.dto.superclass.ActivationDto;
 import com.infomedia.abacox.users.entity.superclass.ActivableEntity;
 import com.infomedia.abacox.users.exception.ResourceDeletionException;
 import com.infomedia.abacox.users.exception.ResourceDisabledException;

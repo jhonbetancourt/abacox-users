@@ -6,17 +6,21 @@ import com.infomedia.abacox.users.dto.module.EventTypesInfo;
 import com.infomedia.abacox.users.dto.module.MEndpointInfo;
 import com.infomedia.abacox.users.dto.module.ModuleInfo;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.util.pattern.PathPattern;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
+@Log4j2
 public class ModuleService {
 
     private final ApplicationContext applicationContext;
@@ -54,25 +58,32 @@ public class ModuleService {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = mapping.getHandlerMethods();
 
         handlerMethods.forEach((key, value) -> {
-            Set<String> patterns = key.getDirectPaths();
-            if (patterns.isEmpty()) {
-                // Fall back to the old method if patterns is empty
-                patterns = key.getPatternsCondition() != null ? key.getPatternsCondition().getPatterns() : Set.of();
+            Set<String> patterns;
+            if (key.getPatternsCondition() != null) {
+                patterns = key.getPatternsCondition().getPatterns();
+            } else if (!key.getPathPatternsCondition().getPatterns().isEmpty()) {
+                patterns = key.getPathPatternsCondition().getPatterns().stream()
+                        .map(PathPattern::getPatternString)
+                        .collect(Collectors.toSet());
+            } else {
+                patterns = Set.of();
             }
 
             Set<RequestMethod> methods = key.getMethodsCondition().getMethods();
             if (methods.isEmpty()) {
-                // If no method is specified, assume it handles all methods
-                methods = Set.of(RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH);
+                methods = Set.of(RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+                        RequestMethod.DELETE, RequestMethod.PATCH);
             }
 
             for (RequestMethod method : methods) {
                 for (String pattern : patterns) {
-                    mEndpointInfos.add(new MEndpointInfo(method.toString(), pattern, !securityConfig.isPublicPath(pattern)));
+                    log.info("Endpoint: {} {}", method, pattern);
+                    mEndpointInfos.add(new MEndpointInfo(method.toString(), pattern,
+                            !securityConfig.isPublicPath(pattern)));
                 }
             }
         });
-        //add swagger path
+
         mEndpointInfos.add(new MEndpointInfo("GET", "/swagger-ui/**", false));
         mEndpointInfos.sort(Comparator.comparing(MEndpointInfo::getPath));
         return mEndpointInfos;

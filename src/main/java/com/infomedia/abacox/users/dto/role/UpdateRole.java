@@ -19,9 +19,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateRole {
-    @NotNull
-    private UUID id;
-
     @NotBlank
     @Size(min = 3, max = 50)
     @Schema(description = "Visible name", example = "Administrator")
