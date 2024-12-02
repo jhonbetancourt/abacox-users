@@ -11,6 +11,7 @@ import com.infomedia.abacox.users.service.UserService;
 import com.turkraft.springfilter.boot.Filter;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RestController
 @Tag(name = "User", description = "User controller")
-@SecurityRequirement(name = "JWT_Token")
+@SecurityRequirements({
+        @SecurityRequirement(name = "JWT_Token"),
+        @SecurityRequirement(name = "Username")
+})
 @RequestMapping("/api/user")
 public class UserController {
 

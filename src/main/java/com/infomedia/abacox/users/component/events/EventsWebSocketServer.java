@@ -14,9 +14,12 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Configuration
 @EnableWebSocket
@@ -31,38 +34,109 @@ public class EventsWebSocketServer extends TextWebSocketHandler implements WebSo
         registry.addHandler(this, "/websocket/module").setAllowedOrigins("*");
     }
 
-    private static final Set<WebSocketSession> sessions = Collections.synchronizedSet(new HashSet<>());
+    private WebSocketSession session = null;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         log.info("Connected " + session.getRemoteAddress());
-        sessions.add(session);
+        this.session = session;
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         log.info("Disconnected " + session.getRemoteAddress());
-        sessions.remove(session);
+        this.session = null;
     }
+
+    private final Map<UUID, CompletableFuture<ResponseMessage>> pendingRequests = new ConcurrentHashMap<>();
+    private static final long REQUEST_TIMEOUT_SECONDS = 30;
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         log.info("Received message from " + session.getRemoteAddress() + ": " + message.getPayload());
+
+        WSMessage wsMessage = null;
+        try {
+            wsMessage = objectMapper.readValue(message.getPayload(), WSMessage.class);
+        } catch (Exception e) {
+            log.error("Error processing message: " + e.getMessage(), e);
+        }
+
+        if(wsMessage!=null&&wsMessage.getMessagetype().equals(MessageType.RESPONSE)){
+            try {
+                // Try to parse the message as a response
+                ResponseMessage response = objectMapper.readValue(message.getPayload(), ResponseMessage.class);
+                CompletableFuture<ResponseMessage> future = pendingRequests.remove(response.getId());
+
+                if (future != null) {
+                    future.complete(response);
+                }
+            } catch (Exception e) {
+                log.error("Error processing response: " + e.getMessage(), e);
+            }
+        }
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.error("Error occurred on " + session.getRemoteAddress() + ": " + exception.getMessage(), exception);
-        sessions.remove(session);
     }
 
     public void sendEventMessage(String source, EventType eventType, String content) {
-        for (WebSocketSession session : sessions) {
-            try {
-                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(new EventMessage(source, eventType, content))));
-            } catch (IOException e) {
-                log.error("Error occurred while sending message to " + session.getRemoteAddress() + ": " + e.getMessage(), e);
-            }
+        try {
+            WSMessage message = EventMessage.builder()
+                    .source(source)
+                    .eventType(eventType)
+                    .content(content)
+                    .id(UUID.randomUUID())
+                    .timestamp(Instant.now())
+                    .messagetype(MessageType.EVENT)
+                    .build();
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
+        } catch (IOException e) {
+            log.error("Error occurred while sending message to " + session.getRemoteAddress() + ": " + e.getMessage(), e);
+        }
+    }
+
+    public ResponseMessage sendRequestMessageAndAwaitResponse(String source, String service, String function, Map<String, Object> arguments)
+            throws IOException, TimeoutException {
+        return sendRequestMessageAndAwaitResponse(source, service, function, arguments, REQUEST_TIMEOUT_SECONDS);
+    }
+
+    public ResponseMessage sendRequestMessageAndAwaitResponse(String source, String service, String function, Map<String, Object> arguments, long timeoutSeconds)
+            throws IOException, TimeoutException {
+
+        if (session == null || !session.isOpen()) {
+            throw new IOException("WebSocket session is not available");
+        }
+
+        WSMessage requestMessage = RequestMessage.builder()
+                .source(source)
+                .function(function)
+                .arguments(arguments)
+                .service(service)
+                .id(UUID.randomUUID())
+                .timestamp(Instant.now())
+                .messagetype(MessageType.REQUEST)
+                .build();
+
+        // Create a CompletableFuture to handle the async response
+        CompletableFuture<ResponseMessage> responseFuture = new CompletableFuture<>();
+        pendingRequests.put(requestMessage.getId(), responseFuture);
+
+        try {
+            // Send the request
+            String requestJson = objectMapper.writeValueAsString(requestMessage);
+            session.sendMessage(new TextMessage(requestJson));
+
+            // Wait for the response with timeout
+            return responseFuture.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            pendingRequests.remove(requestMessage.getId());
+            throw new TimeoutException("Request timed out after " + timeoutSeconds + " seconds");
+        } catch (Exception e) {
+            pendingRequests.remove(requestMessage.getId());
+            throw new IOException("Error while sending request or receiving response", e);
         }
     }
 }

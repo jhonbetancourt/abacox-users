@@ -1,8 +1,10 @@
 package com.infomedia.abacox.users.config;
 
 import com.infomedia.abacox.users.constants.DateTimePattern;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.DateSchema;
@@ -21,12 +23,21 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@SecurityScheme(
-        name = "JWT_Token",
-        type = SecuritySchemeType.HTTP,
-        bearerFormat = "JWT",
-        scheme = "bearer"
-)
+@SecuritySchemes({
+        @SecurityScheme(
+                name = "JWT_Token",
+                type = SecuritySchemeType.HTTP,
+                bearerFormat = "JWT",
+                scheme = "bearer"
+        ),
+        @SecurityScheme(
+                name = "Username",
+                type = SecuritySchemeType.APIKEY,
+                paramName = "X-Username",
+                in = SecuritySchemeIn.HEADER
+        )
+})
+
 public class SwaggerConfig {
 
     @Value("${info.build.name}")

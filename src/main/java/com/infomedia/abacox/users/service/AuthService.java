@@ -29,6 +29,10 @@ public class AuthService {
     private final ModelConverter modelConverter;
 
     public TokenResultDto token(TokenRequestDto tokenRequestDto){
+        if(tokenRequestDto.getUsername().equals("system")){
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
         User user = findActiveUser(tokenRequestDto.getUsername());
 
         if(user!=null&&passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())){

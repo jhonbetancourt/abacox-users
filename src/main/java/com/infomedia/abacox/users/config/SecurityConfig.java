@@ -64,7 +64,7 @@ public class SecurityConfig {
                 , "/swagger-ui.html"
                 , "/error"
                 , "/api/auth/**"
-                , "/api/module/**"
+                , "/api/module/*"
                 , "/websocket/module"};
     }
 
@@ -84,19 +84,11 @@ public class SecurityConfig {
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
                 throws ServletException, IOException {
 
-            String userJsonB64 = request.getHeader("X-User");
+            String headerUsername = request.getHeader("X-Username");
             String username = "anonymousUser";
 
-            JsonNode userJson = objectMapper.createObjectNode();
-            if (userJsonB64 != null) {
-                String userJsonStr = new String(Base64.getDecoder().decode(userJsonB64));
-                try {
-                    userJson = objectMapper.readTree(userJsonStr);
-                }catch (Exception ignore){}
-            }
-
-            if(userJson.has("username")){
-                username = userJson.get("username").asText();
+            if(headerUsername != null){
+                username = headerUsername;
             }
 
             if (!username.equals("anonymousUser")) {

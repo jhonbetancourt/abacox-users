@@ -44,16 +44,46 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
         return user;
     }
 
+    @Transactional
     public User create(CreateUser cDto) {
         return save(buildFromDto(cDto));
     }
 
+    @Transactional
     public User update(UUID id, UpdateUser uDto) {
-        return save(buildFromDto(get(id), uDto));
+        User user = buildFromDto(get(id), uDto);
+        if(user.getUsername().equals("system")){
+            throw new IllegalArgumentException("System user cannot be updated");
+        }
+        return save(user);
+    }
+
+    @Override
+    public User changeActivation(UUID id, boolean active) {
+        if(get(id).getUsername().equals("system")){
+            throw new IllegalArgumentException("System user cannot be deactivated");
+        }
+        return super.changeActivation(id, active);
     }
 
     public Optional<User> findByUsername(String username) {
         return getRepository().findByUsername(username);
+    }
+
+    @Transactional
+    public void initDefaultSystemUser() {
+        String username = "system";
+        if (!getRepository().existsByUsername(username)) {
+            User user = User.builder()
+                    .username(username)
+                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .email("system@abacox.com")
+                    .firstName("System")
+                    .lastName("System")
+                    .role(roleService.getDefaultRoleAdmin())
+                    .build();
+            save(user);
+        }
     }
 
     @Transactional
@@ -63,7 +93,7 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
             User user = User.builder()
                     .username(username)
                     .password(passwordEncoder.encode("@Abcd1234"))
-                    .email("admin@example.com")
+                    .email("admin@abacox.com")
                     .firstName("Admin")
                     .lastName("Admin")
                     .role(roleService.getDefaultRoleAdmin())

@@ -1,27 +1,26 @@
 package com.infomedia.abacox.users.component.events;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@Builder
-public class EventMessage {
+@SuperBuilder(toBuilder = true)
+public class EventMessage extends WSMessage{
     private UUID id;
     private String source;
-    private EventType type;
     private Instant timestamp;
+    private EventType eventType;
     private String content;
 
-    public EventMessage(String source, EventType type, String content) {
+    public EventMessage(String source, EventType eventType, String content) {
         this.id = UUID.randomUUID();
-        this.type = type;
+        this.eventType = eventType;
         this.timestamp = Instant.now();
         this.content = content;
         this.source = source;
