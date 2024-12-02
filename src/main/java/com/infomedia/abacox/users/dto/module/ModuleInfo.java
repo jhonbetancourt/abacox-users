@@ -15,4 +15,5 @@ public class ModuleInfo {
     private String description;
     private String version;
     private String prefix;
+    private String url;
 }

@@ -1,59 +1,48 @@
 package com.infomedia.abacox.users.service;
 
-import com.infomedia.abacox.users.component.remotefunction.BeanScanner;
-import com.infomedia.abacox.users.component.remotefunction.DynamicFunctionCaller;
-import com.infomedia.abacox.users.component.remotefunction.FunctionResult;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
+import com.infomedia.abacox.users.component.events.EventsWebSocketServer;
+import com.infomedia.abacox.users.component.functiontools.FunctionCall;
+import com.infomedia.abacox.users.component.functiontools.FunctionResult;
+import com.infomedia.abacox.users.dto.module.ModuleInfo;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
 @Service
-@Log4j2
+@RequiredArgsConstructor
 public class RemoteFunctionService {
-    private final BeanScanner beanScanner;
-    private Map<String, Object> serviceInstances;
 
-    public RemoteFunctionService(BeanScanner beanScanner) {
-        this.beanScanner = beanScanner;
-    }
+    private final AuthService authService;
+    private final EventsWebSocketServer eventsWebSocketServer;
+    private final ModuleService moduleService;
 
-    @EventListener(ApplicationReadyEvent.class)
-    private void init() {
-        serviceInstances = beanScanner.scanAndGetBeans(getClass().getPackageName());
-        serviceInstances.remove("remoteFunctionService");
-        log.info("Loaded service instances: {}", serviceInstances.keySet());
-    }
 
-    public FunctionResult callFunction(String serviceName, String functionName, Map<String, Object> args) {
+    public FunctionResult callFunction(String modulePrefix, String service, String function, Map<String, Object> arguments) {
         try {
-            Object serviceInstance = serviceInstances.get(serviceName);
-            if (serviceInstance == null) {
-                Exception e = new IllegalArgumentException("Service not found: " + serviceName);
-                return FunctionResult.builder()
-                        .success(false)
-                        .exception(e.getClass().getName())
-                        .message(e.getMessage())
-                        .build();
-            }
-            Object result = DynamicFunctionCaller.callFunction(serviceInstance, functionName, args);
-            return FunctionResult.builder()
-                    .success(true)
-                    .result(result)
-                    .build();
-        } catch (Throwable e) {
-            log.error("Error calling function {}:{}", serviceName, functionName, e);
-            return FunctionResult.builder()
-                    .success(false)
-                    .exception(e.getClass().getName())
-                    .message(e.getMessage())
-                    .build();
-        }
-    }
+            String thisModulePrefix = moduleService.getPrefix();
+            ModuleInfo moduleInfo = eventsWebSocketServer.sendRequestMessageAndAwaitResponse(thisModulePrefix, "moduleService"
+                    ,"getInfoByPrefix", Map.of("prefix", modulePrefix)).getResult(ModuleInfo.class);
 
-    public Map<String, Object> getAvailableServices() {
-        return serviceInstances;
+            RestClient restClient = RestClient.builder()
+                    .baseUrl(moduleInfo.getUrl())
+                    .build();
+
+            FunctionCall functionCall = FunctionCall.builder()
+                    .service(service)
+                    .function(function)
+                    .arguments(arguments)
+                    .build();
+
+            String username = authService.getUsername();
+
+            return restClient.post()
+                    .uri("/module/function/call")
+                    .header("X-Username", username)
+                    .body(functionCall).retrieve().body(FunctionResult.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

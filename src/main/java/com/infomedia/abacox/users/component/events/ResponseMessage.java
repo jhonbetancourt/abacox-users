@@ -1,5 +1,7 @@
 package com.infomedia.abacox.users.component.events;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.infomedia.abacox.users.config.JsonConfig;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -19,5 +21,9 @@ public class ResponseMessage extends WSMessage {
     private boolean success;
     private String exception;
     private String errorMessage;
-    private Object result;
+    private JsonNode result;
+
+    public <T> T getResult(Class<T> clazz) {
+        return JsonConfig.getObjectMapper().convertValue(result, clazz);
+    }
 }

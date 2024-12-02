@@ -88,4 +88,8 @@ public class ModuleService {
         mEndpointInfos.sort(Comparator.comparing(MEndpointInfo::getPath));
         return mEndpointInfos;
     }
+
+    public String getPrefix() {
+        return modulePrefix;
+    }
 }

@@ -12,6 +12,8 @@ import com.infomedia.abacox.users.exception.ResourceDisabledException;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -122,5 +124,10 @@ public class AuthService {
         Claims claims = jwtManager.validateDownloadToken(token);
         String username = claims.get("username", String.class);
         return findActiveUser(username);
+    }
+
+    public String getUsername(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
     }
 }

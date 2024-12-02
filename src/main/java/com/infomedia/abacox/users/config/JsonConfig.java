@@ -10,13 +10,21 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JsonConfig {
 
-    @Bean
-    public ObjectMapper objectMapper(){
-        ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
+    static {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         objectMapper.findAndRegisterModules();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
+    @Bean
+    public ObjectMapper objectMapper(){
+        return objectMapper;
+    }
+
+    public static ObjectMapper getObjectMapper() {
         return objectMapper;
     }
 }

@@ -1,4 +1,4 @@
-package com.infomedia.abacox.users.component.remotefunction;
+package com.infomedia.abacox.users.component.functiontools;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
