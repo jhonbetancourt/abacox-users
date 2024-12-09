@@ -20,7 +20,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -33,7 +33,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problemDetail.setTitle("Resource Not Found");
         problemDetail.setType(URI.create("resource-not-found"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -42,7 +42,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("Resource Already Exists");
         problemDetail.setType(URI.create("resource-already-exists"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -51,7 +51,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("Resource Deletion Error");
         problemDetail.setType(URI.create("resource-deletion-error"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -60,7 +60,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("Resource Disabled");
         problemDetail.setType(URI.create("resource-disabled"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -71,7 +71,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
         problemDetail.setTitle("Method Not Allowed");
         problemDetail.setType(URI.create("method-not-allowed"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -82,7 +82,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ex.getMessage());
         problemDetail.setTitle("Unsupported Media Type");
         problemDetail.setType(URI.create("unsupported-media-type"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -93,7 +93,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_ACCEPTABLE, ex.getMessage());
         problemDetail.setTitle("Not Acceptable Media Type");
         problemDetail.setType(URI.create("not-acceptable-media-type"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -104,7 +104,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Missing Request Parameter");
         problemDetail.setType(URI.create("missing-parameter"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -113,7 +113,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Method Argument Type Mismatch");
         problemDetail.setType(URI.create("argument-type-mismatch"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -127,7 +127,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, errorMessage);
         problemDetail.setTitle("Validation Error");
         problemDetail.setType(URI.create("validation-error"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -139,7 +139,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, errorMessage);
         problemDetail.setTitle("Constraint Violation");
         problemDetail.setType(URI.create("constraint-violation"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -148,7 +148,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problemDetail.setTitle("Bad Credentials");
         problemDetail.setType(URI.create("bad-credentials"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
 
@@ -158,7 +158,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problemDetail.setTitle("Message Not Readable");
         problemDetail.setType(URI.create("message-not-readable"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         return new ResponseEntity<>(problemDetail, headers, status);
     }
 
@@ -171,7 +171,7 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
                 , "An unexpected error occurred");
         problemDetail.setTitle("Internal Server Error");
         problemDetail.setType(URI.create("internal-error"));
-        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
         problemDetail.setStatus(statusCode.value());
         return new ResponseEntity<>(problemDetail, headers, statusCode);
     }
