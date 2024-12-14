@@ -4,6 +4,7 @@ package com.infomedia.abacox.users.component.events;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -14,8 +15,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,9 @@ import java.util.concurrent.TimeoutException;
 public class EventsWebSocketServer extends TextWebSocketHandler implements WebSocketConfigurer {
 
     private final ObjectMapper objectMapper;
+
+    @Value("${spring.application.prefix}")
+    private String source;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -48,7 +52,7 @@ public class EventsWebSocketServer extends TextWebSocketHandler implements WebSo
         this.session = null;
     }
 
-    private final Map<UUID, CompletableFuture<ResponseMessage>> pendingRequests = new ConcurrentHashMap<>();
+    private final Map<UUID, CompletableFuture<CommandResponseMessage>> pendingRequests = new ConcurrentHashMap<>();
     private static final long REQUEST_TIMEOUT_SECONDS = 30;
 
     @Override
@@ -62,11 +66,11 @@ public class EventsWebSocketServer extends TextWebSocketHandler implements WebSo
             log.error("Error processing message: " + e.getMessage(), e);
         }
 
-        if(wsMessage!=null&&wsMessage.getMessagetype().equals(MessageType.RESPONSE)){
+        if(wsMessage!=null&&wsMessage.getMessagetype().equals(MessageType.COMMAND_RESPONSE)){
             try {
                 // Try to parse the message as a response
-                ResponseMessage response = objectMapper.readValue(message.getPayload(), ResponseMessage.class);
-                CompletableFuture<ResponseMessage> future = pendingRequests.remove(response.getId());
+                CommandResponseMessage response = objectMapper.readValue(message.getPayload(), CommandResponseMessage.class);
+                CompletableFuture<CommandResponseMessage> future = pendingRequests.remove(response.getId());
 
                 if (future != null) {
                     future.complete(response);
@@ -82,46 +86,31 @@ public class EventsWebSocketServer extends TextWebSocketHandler implements WebSo
         log.error("Error occurred on " + session.getRemoteAddress() + ": " + exception.getMessage(), exception);
     }
 
-    public void sendEventMessage(String source, EventType eventType, String content) {
+    public void sendEventMessage(EventType eventType, String content) {
         try {
-            WSMessage message = EventMessage.builder()
-                    .source(source)
-                    .eventType(eventType)
-                    .content(content)
-                    .id(UUID.randomUUID())
-                    .timestamp(Instant.now())
-                    .messagetype(MessageType.EVENT)
-                    .build();
+            WSMessage message = new EventMessage(source, eventType, content);
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
         } catch (IOException e) {
             log.error("Error occurred while sending message to " + session.getRemoteAddress() + ": " + e.getMessage(), e);
         }
     }
 
-    public ResponseMessage sendRequestMessageAndAwaitResponse(String source, String service, String function, Map<String, Object> arguments)
+    public CommandResponseMessage sendCommandRequestAndAwaitResponse(String command, Map<String, Object> arguments)
             throws IOException, TimeoutException {
-        return sendRequestMessageAndAwaitResponse(source, service, function, arguments, REQUEST_TIMEOUT_SECONDS);
+        return sendCommandRequestAndAwaitResponse(command, arguments, REQUEST_TIMEOUT_SECONDS);
     }
 
-    public ResponseMessage sendRequestMessageAndAwaitResponse(String source, String service, String function, Map<String, Object> arguments, long timeoutSeconds)
+    public CommandResponseMessage sendCommandRequestAndAwaitResponse(String command, Map<String, Object> arguments, long timeoutSeconds)
             throws IOException, TimeoutException {
 
         if (session == null || !session.isOpen()) {
             throw new IOException("WebSocket session is not available");
         }
 
-        WSMessage requestMessage = RequestMessage.builder()
-                .source(source)
-                .function(function)
-                .arguments(arguments)
-                .service(service)
-                .id(UUID.randomUUID())
-                .timestamp(Instant.now())
-                .messagetype(MessageType.REQUEST)
-                .build();
+        WSMessage requestMessage = new CommandRequestMessage(source, command, arguments);
 
         // Create a CompletableFuture to handle the async response
-        CompletableFuture<ResponseMessage> responseFuture = new CompletableFuture<>();
+        CompletableFuture<CommandResponseMessage> responseFuture = new CompletableFuture<>();
         pendingRequests.put(requestMessage.getId(), responseFuture);
 
         try {

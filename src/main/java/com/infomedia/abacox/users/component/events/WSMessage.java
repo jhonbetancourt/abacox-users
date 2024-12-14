@@ -1,20 +1,37 @@
 package com.infomedia.abacox.users.component.events;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-@SuperBuilder(toBuilder = true)
+@NoArgsConstructor
 public class WSMessage {
     private UUID id;
     private String source;
-    private Instant timestamp;
+    private LocalDateTime timestamp;
     private MessageType messagetype;
+
+    public WSMessage(UUID id, String source, MessageType messagetype) {
+        this.id = id;
+        this.source = source;
+        this.timestamp = LocalDateTime.now();
+        this.messagetype = messagetype;
+    }
+
+    public WSMessage(String source, MessageType messagetype) {
+        this.id = UUID.randomUUID();
+        this.source = source;
+        this.timestamp = LocalDateTime.now();
+        this.messagetype = messagetype;
+    }
+
+    public WSMessage(UUID id, String source, LocalDateTime timestamp, MessageType messagetype) {
+        this.id = id;
+        this.source = source;
+        this.timestamp = timestamp;
+        this.messagetype = messagetype;
+    }
 }

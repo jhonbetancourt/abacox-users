@@ -1,20 +1,21 @@
 package com.infomedia.abacox.users.component.events;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 import java.util.Map;
 
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@SuperBuilder(toBuilder = true)
-public class RequestMessage extends WSMessage{
-    private String service;
-    private String function;
+@Builder
+public class CommandCall {
+    @NotBlank
+    private String command;
+    @Size(min = 1)
     private Map<String, Object> arguments;
 }

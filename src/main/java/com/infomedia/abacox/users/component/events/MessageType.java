@@ -1,5 +1,5 @@
 package com.infomedia.abacox.users.component.events;
 
 public enum MessageType {
-    EVENT, REQUEST, RESPONSE
+    EVENT, COMMAND_REQUEST, COMMAND_RESPONSE
 }
