@@ -2,6 +2,7 @@ package com.infomedia.abacox.users.service;
 
 import com.infomedia.abacox.users.dto.user.CreateUser;
 import com.infomedia.abacox.users.dto.user.UpdateUser;
+import com.infomedia.abacox.users.dto.user.UserContactInfoDto;
 import com.infomedia.abacox.users.entity.User;
 import com.infomedia.abacox.users.repository.UserRepository;
 import com.infomedia.abacox.users.service.common.CrudService;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -100,5 +102,29 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                     .build();
             save(user);
         }
+    }
+
+    @Transactional
+    public List<UserContactInfoDto> getContactInfoByRole(List<String> rolenames) {
+        return getRepository().findByRole_RolenameInAndActive(rolenames, true).stream()
+                .map(user -> UserContactInfoDto.builder()
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .phone(user.getPhone())
+                        .rolename(user.getRole().getRolename())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public List<UserContactInfoDto> getContactInfoByUsername(List<String> usernames) {
+        return getRepository().findByUsernameInAndActive(usernames, true).stream()
+                .map(user -> UserContactInfoDto.builder()
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .phone(user.getPhone())
+                        .rolename(user.getRole().getRolename())
+                        .build())
+                .toList();
     }
 }
