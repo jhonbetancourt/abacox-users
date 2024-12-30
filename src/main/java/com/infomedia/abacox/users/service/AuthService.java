@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class AuthService {
             throw new BadCredentialsException("Invalid credentials");
         }
 
-        User user = findActiveUser(tokenRequestDto.getUsername());
+        User user = findActiveUser(tokenRequestDto.getUsername()).orElse(null);
 
         if(user!=null&&passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())){
 
@@ -72,7 +73,7 @@ public class AuthService {
     public TokenResultDto refresh(String token) {
         Claims claims = jwtManager.validateRefreshToken(token);
         String username = claims.get("username", String.class);
-        User user = findActiveUser(username);
+        User user = findActiveUser(username).orElseThrow(() -> new InvalidJwtTokenException("User not found"));
 
         Map<String, Object> newClaims = new HashMap<>();
         newClaims.put("userId", user.getId());
@@ -104,26 +105,24 @@ public class AuthService {
                 .build();
     }
 
-    private User findActiveUser(String username){
-        User user = userService.findByUsername(username).orElseThrow(() -> new InvalidJwtTokenException("User not found"));
-        if(!user.isActive()){
-            throw new ResourceDisabledException(User.class, user.getId());
+    private Optional<User> findActiveUser(String username){
+        User user = userService.findByUsername(username).orElse(null);
+        if(user==null||!user.isActive()){
+            return Optional.empty();
         }
-        return user;
+        return Optional.of(user);
     }
 
     public User validateAccessToken(String token){
         Claims claims = jwtManager.validateAccessToken(token);
         String username = claims.get("username", String.class);
-        return findActiveUser(username);
-
-
+        return findActiveUser(username).orElseThrow(() -> new InvalidJwtTokenException("User not found"));
     }
 
     public User validateDownloadToken(String token){
         Claims claims = jwtManager.validateDownloadToken(token);
         String username = claims.get("username", String.class);
-        return findActiveUser(username);
+        return findActiveUser(username).orElseThrow(() -> new InvalidJwtTokenException("User not found"));
     }
 
     public String getUsername(){

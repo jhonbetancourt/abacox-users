@@ -28,6 +28,17 @@ import java.util.stream.Collectors;
 @Configuration
 public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(RuntimeException.class)
+    public ProblemDetail handleRuntimeException(RuntimeException ex) {
+        log.error(ex);
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR
+                , "An unexpected error occurred");
+        problemDetail.setTitle("Internal Server Error");
+        problemDetail.setType(URI.create("internal-error"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleResourceNotFoundException(ResourceNotFoundException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());

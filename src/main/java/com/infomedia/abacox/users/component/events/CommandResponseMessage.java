@@ -1,8 +1,8 @@
 package com.infomedia.abacox.users.component.events;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.infomedia.abacox.notifications.config.JsonConfig;
-import com.infomedia.abacox.notifications.exception.RemoteServiceException;
+import com.infomedia.abacox.users.config.JsonConfig;
+import com.infomedia.abacox.users.exception.RemoteServiceException;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
