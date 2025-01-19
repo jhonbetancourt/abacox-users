@@ -100,4 +100,8 @@ public abstract class CrudService<E, I, R extends JpaRepository<E, I> & JpaSpeci
     protected E save(E entity) {
         return repository.save(entity);
     }
+
+    protected List<E> saveAll(Collection<E> entities) {
+        return repository.saveAll(entities);
+    }
 }

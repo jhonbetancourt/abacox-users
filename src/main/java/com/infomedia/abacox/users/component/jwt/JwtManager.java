@@ -29,12 +29,15 @@ public class JwtManager {
     @Value("${auth.jwt.encryption-key}")
     private String encryptionKey;
 
+    @Setter
     @Value("${auth.jwt.access-token-duration}")
     private Long accessTokenDurationSec;
 
+    @Setter
     @Value("${auth.jwt.download-token-duration}")
     private Long downloadTokenDuration;
 
+    @Setter
     @Value("${auth.jwt.refresh-token-duration}")
     private Long refreshTokenDurationSec;
     private final AES256BinaryEncryptor encryptor = new AES256BinaryEncryptor();
@@ -62,7 +65,7 @@ public class JwtManager {
                 .notBefore(now)
                 .issuedAt(now)
                 .signWith(secret)
-                .compact(), accessTokenDurationSec);
+                .compact(), accessTokenDurationSec, nowLdt, nowLdt.plusSeconds(accessTokenDurationSec));
     }
 
 
@@ -82,7 +85,7 @@ public class JwtManager {
                 .signWith(secret)
                 .compressWith(Jwts.ZIP.DEF)
                 .compact()
-                .getBytes(StandardCharsets.UTF_8))), downloadTokenDuration);
+                .getBytes(StandardCharsets.UTF_8))), downloadTokenDuration, nowLdt, nowLdt.plusSeconds(downloadTokenDuration));
     }
 
     public TokenInfo generateRefreshToken(Map<String, Object> claims) {
@@ -99,7 +102,7 @@ public class JwtManager {
                 .notBefore(now)
                 .issuedAt(now)
                 .signWith(secret)
-                .compact(), refreshTokenDurationSec);
+                .compact(), refreshTokenDurationSec, nowLdt, nowLdt.plusSeconds(refreshTokenDurationSec));
     }
 
     public Claims validateAccessToken(@NonNull String accessToken) {
@@ -146,5 +149,7 @@ public class JwtManager {
     public static class TokenInfo{
         private String token;
         private Long duration;
+        private LocalDateTime issuedAt;
+        private LocalDateTime expiration;
     }
 }

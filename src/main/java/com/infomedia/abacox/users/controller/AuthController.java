@@ -42,4 +42,9 @@ public class AuthController {
         return modelConverter.map(authService.validateDownloadToken(dto.getToken()), UserDto.class);
     }
 
+    @PostMapping(value = "/invalidate", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public void invalidate(@Valid @RequestBody JwtTokenDto dto){
+        authService.invalidate(dto.getToken());
+    }
+
 }

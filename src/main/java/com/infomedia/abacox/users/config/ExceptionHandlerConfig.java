@@ -1,6 +1,7 @@
 package com.infomedia.abacox.users.config;
 
 
+import com.infomedia.abacox.users.component.jwt.InvalidJwtTokenException;
 import com.infomedia.abacox.users.exception.ResourceAlreadyExistsException;
 import com.infomedia.abacox.users.exception.ResourceDeletionException;
 import com.infomedia.abacox.users.exception.ResourceDisabledException;
@@ -159,6 +160,15 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problemDetail.setTitle("Bad Credentials");
         problemDetail.setType(URI.create("bad-credentials"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidJwtTokenException.class)
+    public ProblemDetail handleInvalidJwtTokenException(InvalidJwtTokenException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problemDetail.setTitle("Invalid JWT Token");
+        problemDetail.setType(URI.create("invalid-jwt-token"));
         problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }
