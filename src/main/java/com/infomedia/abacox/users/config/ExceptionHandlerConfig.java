@@ -7,6 +7,7 @@ import com.infomedia.abacox.users.exception.ResourceDeletionException;
 import com.infomedia.abacox.users.exception.ResourceDisabledException;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.*;
@@ -129,6 +130,24 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Validation Error");
+        problemDetail.setType(URI.create("validation-error"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ValidationException.class)
+    public ProblemDetail handleValidationException(ValidationException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Validation Error");
+        problemDetail.setType(URI.create("validation-error"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers,
@@ -149,8 +168,8 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining(", "));
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, errorMessage);
-        problemDetail.setTitle("Constraint Violation");
-        problemDetail.setType(URI.create("constraint-violation"));
+        problemDetail.setTitle("Validation Error");
+        problemDetail.setType(URI.create("validation-error"));
         problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }

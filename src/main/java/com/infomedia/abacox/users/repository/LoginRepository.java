@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface LoginRepository extends JpaRepository<Login, Long>, JpaSpecificationExecutor<Login> {
+public interface LoginRepository extends JpaRepository<Login, UUID>, JpaSpecificationExecutor<Login> {
 
 
     Optional<Login> findByTokenAndLogoutDateIsNull(String token);

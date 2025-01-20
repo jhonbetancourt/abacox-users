@@ -10,7 +10,6 @@ import com.infomedia.abacox.users.dto.auth.TokenResultDto;
 import com.infomedia.abacox.users.dto.user.UserDto;
 import com.infomedia.abacox.users.entity.Login;
 import com.infomedia.abacox.users.entity.User;
-import com.infomedia.abacox.users.exception.ResourceDisabledException;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -150,7 +149,7 @@ public class AuthService {
     }
 
     public Login invalidate(String token){
-        return loginService.registerLogout(token);
+        return loginService.registerLogoutToken(token);
     }
 
     private Optional<User> findActiveUser(String username){

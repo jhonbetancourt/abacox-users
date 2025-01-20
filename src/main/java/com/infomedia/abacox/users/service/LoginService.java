@@ -4,6 +4,7 @@ import com.infomedia.abacox.users.entity.Login;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
 import com.infomedia.abacox.users.repository.LoginRepository;
 import com.infomedia.abacox.users.service.common.CrudService;
+import jakarta.validation.ValidationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class LoginService extends CrudService<Login, Long, LoginRepository> {
+public class LoginService extends CrudService<Login, UUID, LoginRepository> {
 
     private final UserService userService;
 
@@ -34,18 +35,32 @@ public class LoginService extends CrudService<Login, Long, LoginRepository> {
         return save(login);
     }
 
-    public Login registerLogout(String token) {
+    public Login registerLogoutToken(String token) {
         Login login = getRepository().findByTokenAndLogoutDateIsNull(token)
                 .orElseThrow(() -> new ResourceNotFoundException(Login.class));
-
+        if(login.getLogoutDate() != null) {
+            throw new ValidationException("Token already invalidated");
+        }
         login.setLogoutDate(LocalDateTime.now());
 
+        return save(login);
+    }
+
+    public Login registerLogout(UUID loginId) {
+        Login login = get(loginId);
+        if(login.getLogoutDate() != null) {
+            throw new ValidationException("Login already invalidated");
+        }
+        login.setLogoutDate(LocalDateTime.now());
         return save(login);
     }
 
     @Transactional
     public List<Login> registerLogoutAll(UUID userId) {
         List<Login> logins = getRepository().findByUserAndLogoutDateIsNull(userService.get(userId));
+        if(logins.isEmpty()) {
+            throw new ResourceNotFoundException(Login.class);
+        }
         LocalDateTime now = LocalDateTime.now();
         logins.forEach(login -> login.setLogoutDate(now));
         return saveAll(logins);
