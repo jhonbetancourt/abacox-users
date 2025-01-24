@@ -1,18 +1,23 @@
 package com.infomedia.abacox.users.service;
 
+import com.infomedia.abacox.users.component.export.GenericExcelGenerator;
 import com.infomedia.abacox.users.dto.user.CreateUser;
 import com.infomedia.abacox.users.dto.user.UpdateUser;
 import com.infomedia.abacox.users.dto.user.UserContactInfoDto;
 import com.infomedia.abacox.users.entity.User;
 import com.infomedia.abacox.users.repository.UserRepository;
 import com.infomedia.abacox.users.service.common.CrudService;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 @Service
 public class UserService extends CrudService<User, UUID, UserRepository> {
@@ -126,5 +131,15 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                         .rolename(user.getRole().getRolename())
                         .build())
                 .toList();
+    }
+
+    public ByteArrayResource exportExcel(Specification<User> specification, Pageable pageable, List<String> alternativeHeaders) {
+        Page<User> collection = find(specification, pageable);
+        try {
+            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), Set.of("password"), alternativeHeaders);
+            return new ByteArrayResource(inputStream.readAllBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
