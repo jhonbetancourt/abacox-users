@@ -6,6 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,7 +17,7 @@ public class GenericExcelGenerator {
             String.class, Boolean.class, boolean.class,
             Integer.class, int.class, Long.class, long.class,
             Double.class, double.class, Float.class, float.class,
-            LocalDate.class, UUID.class
+            LocalDate.class, LocalDateTime.class, UUID.class
     ));
 
     private static class FieldInfo {
@@ -70,10 +71,7 @@ public class GenericExcelGenerator {
 
         createHeaderRow(workbook, sheet, fields, alternativeHeaders);
         createDataRows(sheet, entities, fields);
-
-        for (int i = 0; i < fields.size(); i++) {
-            sheet.autoSizeColumn(i);
-        }
+        setColumnWidths(sheet, fields.size());
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         workbook.write(outputStream);
@@ -117,10 +115,7 @@ public class GenericExcelGenerator {
 
             createHeaderRow(workbook, sheet, fields, alternativeHeaders);
             createDataRows(sheet, entities, fields);
-
-            for (int i = 0; i < fields.size(); i++) {
-                sheet.autoSizeColumn(i);
-            }
+            setColumnWidths(sheet, fields.size());
 
             try (FileOutputStream fileOut = new FileOutputStream(filePath)) {
                 workbook.write(fileOut);
@@ -223,18 +218,32 @@ public class GenericExcelGenerator {
 
     private static <T> void createDataRows(Sheet sheet, List<T> entities, List<FieldInfo> fields) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         int rowNum = 1;
 
         for (T entity : entities) {
             Row row = sheet.createRow(rowNum++);
             for (int i = 0; i < fields.size(); i++) {
                 Cell cell = row.createCell(i);
-                setFieldValue(cell, entity, fields.get(i), dateFormatter);
+                setFieldValue(cell, entity, fields.get(i), dateFormatter, dateTimeFormatter);
             }
         }
     }
 
-    private static <T> void setFieldValue(Cell cell, T entity, FieldInfo fieldInfo, DateTimeFormatter dateFormatter) {
+    private static void setColumnWidths(Sheet sheet, int columnCount) {
+        for (int i = 0; i < columnCount; i++) {
+            sheet.autoSizeColumn(i);
+            int currentWidth = sheet.getColumnWidth(i);
+            int maxWidth = 256 * 30; // 30 characters maximum width for all columns
+            int minWidth = 256 * 10; // 10 characters minimum width
+            int newWidth = Math.min(Math.max(currentWidth, minWidth), maxWidth);
+            sheet.setColumnWidth(i, newWidth);
+        }
+    }
+
+    private static <T> void setFieldValue(Cell cell, T entity, FieldInfo fieldInfo,
+                                        DateTimeFormatter dateFormatter,
+                                        DateTimeFormatter dateTimeFormatter) {
         try {
             Object value = getFieldValue(entity, fieldInfo.fieldPath);
 
@@ -249,6 +258,9 @@ public class GenericExcelGenerator {
                     break;
                 case "LocalDate":
                     cell.setCellValue(((LocalDate) value).format(dateFormatter));
+                    break;
+                case "LocalDateTime":
+                    cell.setCellValue(((LocalDateTime) value).format(dateTimeFormatter));
                     break;
                 case "boolean":
                 case "Boolean":

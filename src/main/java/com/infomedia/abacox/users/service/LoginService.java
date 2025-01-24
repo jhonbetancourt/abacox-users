@@ -96,7 +96,7 @@ public class LoginService extends CrudService<Login, UUID, LoginRepository> {
     public ByteArrayResource exportExcel(Specification<Login> specification, Pageable pageable, List<String> alternativeHeaders) {
         Page<Login> collection = find(specification, pageable);
         try {
-            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), alternativeHeaders);
+            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), Set.of("user.password"), alternativeHeaders);
             return new ByteArrayResource(inputStream.readAllBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
