@@ -2,7 +2,6 @@ package com.infomedia.abacox.users.service;
 
 import com.infomedia.abacox.users.component.export.GenericExcelGenerator;
 import com.infomedia.abacox.users.entity.Login;
-import com.infomedia.abacox.users.entity.User;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
 import com.infomedia.abacox.users.repository.LoginRepository;
 import com.infomedia.abacox.users.service.common.CrudService;
@@ -75,7 +74,7 @@ public class LoginService extends CrudService<Login, UUID, LoginRepository> {
         return saveAll(logins);
     }
 
-    public Login findByRefreshToken(String token) {
+    public Login getByRefreshToken(String token) {
         return getRepository().findByTokenAndLogoutDateIsNull(token)
                 .orElseThrow(() -> new ResourceNotFoundException(Login.class));
     }
