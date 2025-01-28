@@ -117,12 +117,14 @@ public class AuthService {
         String username = claims.get("username", String.class);
         User user = findActiveUser(username).orElseThrow(() -> new InvalidJwtTokenException("User not found"));
 
+        Login login = loginService.findByRefreshToken(token);
+
         Map<String, Object> newClaims = new HashMap<>();
         newClaims.put("userId", user.getId());
         newClaims.put("username", user.getUsername());
         newClaims.put("roleId", user.getRole().getId());
         newClaims.put("rolename", user.getRole().getName());
-        newClaims.put("loginId", claims.get("loginId", String.class));
+        newClaims.put("loginId", login.getId());
         JwtManager.TokenInfo accessTokenInfo = jwtManager.generateAccessToken(newClaims);
         JwtManager.TokenInfo downloadTokenInfo = jwtManager.generateDownloadToken(newClaims);
 

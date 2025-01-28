@@ -75,6 +75,11 @@ public class LoginService extends CrudService<Login, UUID, LoginRepository> {
         return saveAll(logins);
     }
 
+    public Login findByRefreshToken(String token) {
+        return getRepository().findByTokenAndLogoutDateIsNull(token)
+                .orElseThrow(() -> new ResourceNotFoundException(Login.class));
+    }
+
     public boolean sessionIsValid(String token) {
         return getRepository().isTokenValidForUser(token, LocalDateTime.now());
     }
