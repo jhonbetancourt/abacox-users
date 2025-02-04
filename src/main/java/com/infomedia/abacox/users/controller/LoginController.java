@@ -1,5 +1,6 @@
 package com.infomedia.abacox.users.controller;
 
+import com.infomedia.abacox.users.component.export.excel.ParseUtils;
 import com.infomedia.abacox.users.component.modeltools.ModelConverter;
 import com.infomedia.abacox.users.dto.generic.UUIDBody;
 import com.infomedia.abacox.users.dto.login.LoginDto;
@@ -62,9 +63,9 @@ public class LoginController {
             , @Parameter(hidden = true) Pageable pageable
             , @RequestParam(required = false) String filter, @RequestParam(required = false) Integer page
             , @RequestParam(required = false) Integer size, @RequestParam(required = false) String sort
-            , @RequestParam(required = false) List<String> alternativeHeaders) {
+            , @RequestParam(required = false) String alternativeHeaders) {
 
-        ByteArrayResource resource = loginService.exportExcel(spec, pageable, alternativeHeaders);
+        ByteArrayResource resource = loginService.exportExcel(spec, pageable, ParseUtils.parseAlternativeHeaders(alternativeHeaders));
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=logins.xlsx")

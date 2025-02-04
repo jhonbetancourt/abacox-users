@@ -1,6 +1,6 @@
 package com.infomedia.abacox.users.service;
 
-import com.infomedia.abacox.users.component.export.GenericExcelGenerator;
+import com.infomedia.abacox.users.component.export.excel.GenericExcelGenerator;
 import com.infomedia.abacox.users.entity.Login;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
 import com.infomedia.abacox.users.repository.LoginRepository;
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -97,7 +98,7 @@ public class LoginService extends CrudService<Login, UUID, LoginRepository> {
         saveAll(expiredLogins);
     }
 
-    public ByteArrayResource exportExcel(Specification<Login> specification, Pageable pageable, List<String> alternativeHeaders) {
+    public ByteArrayResource exportExcel(Specification<Login> specification, Pageable pageable, Map<String, String> alternativeHeaders) {
         Page<Login> collection = find(specification, pageable);
         try {
             InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), Set.of("user.password"), alternativeHeaders);

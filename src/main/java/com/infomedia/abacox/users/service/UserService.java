@@ -1,6 +1,6 @@
 package com.infomedia.abacox.users.service;
 
-import com.infomedia.abacox.users.component.export.GenericExcelGenerator;
+import com.infomedia.abacox.users.component.export.excel.GenericExcelGenerator;
 import com.infomedia.abacox.users.dto.user.CreateUser;
 import com.infomedia.abacox.users.dto.user.UpdateUser;
 import com.infomedia.abacox.users.dto.user.UserContactInfoDto;
@@ -133,7 +133,7 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                 .toList();
     }
 
-    public ByteArrayResource exportExcel(Specification<User> specification, Pageable pageable, List<String> alternativeHeaders) {
+    public ByteArrayResource exportExcel(Specification<User> specification, Pageable pageable, Map<String, String> alternativeHeaders) {
         Page<User> collection = find(specification, pageable);
         try {
             InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), Set.of("password"), alternativeHeaders);

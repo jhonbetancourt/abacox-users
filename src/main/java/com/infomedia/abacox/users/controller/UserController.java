@@ -1,5 +1,6 @@
 package com.infomedia.abacox.users.controller;
 
+import com.infomedia.abacox.users.component.export.excel.ParseUtils;
 import com.infomedia.abacox.users.component.modeltools.ModelConverter;
 import com.infomedia.abacox.users.dto.role.RoleDto;
 import com.infomedia.abacox.users.dto.superclass.ActivationDto;
@@ -77,9 +78,9 @@ public class UserController {
             , @Parameter(hidden = true) Pageable pageable
             , @RequestParam(required = false) String filter, @RequestParam(required = false) Integer page
             , @RequestParam(required = false) Integer size, @RequestParam(required = false) String sort
-            , @RequestParam(required = false) List<String> alternativeHeaders) {
+            , @RequestParam(required = false) String alternativeHeaders) {
 
-        ByteArrayResource resource = userService.exportExcel(spec, pageable, alternativeHeaders);
+        ByteArrayResource resource = userService.exportExcel(spec, pageable, ParseUtils.parseAlternativeHeaders(alternativeHeaders));
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=users.xlsx")

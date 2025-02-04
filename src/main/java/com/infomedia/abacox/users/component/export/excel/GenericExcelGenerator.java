@@ -1,4 +1,4 @@
-package com.infomedia.abacox.users.component.export;
+package com.infomedia.abacox.users.component.export.excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;

@@ -1,10 +1,9 @@
 package com.infomedia.abacox.users.service;
 
-import com.infomedia.abacox.users.component.export.GenericExcelGenerator;
+import com.infomedia.abacox.users.component.export.excel.GenericExcelGenerator;
 import com.infomedia.abacox.users.dto.role.CreateRole;
 import com.infomedia.abacox.users.dto.role.UpdateRole;
 import com.infomedia.abacox.users.entity.Role;
-import com.infomedia.abacox.users.entity.User;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
 import com.infomedia.abacox.users.repository.RoleRepository;
 import com.infomedia.abacox.users.service.common.CrudService;
@@ -17,8 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -67,7 +65,7 @@ public class RoleService extends CrudService<Role, UUID, RoleRepository> {
                 .orElseThrow(() -> new ResourceNotFoundException(Role.class, "rolename "+ "admin"));
     }
 
-    public ByteArrayResource exportExcel(Specification<Role> specification, Pageable pageable, List<String> alternativeHeaders) {
+    public ByteArrayResource exportExcel(Specification<Role> specification, Pageable pageable, Map<String, String> alternativeHeaders) {
         Page<Role> collection = find(specification, pageable);
         try {
             InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), alternativeHeaders);
