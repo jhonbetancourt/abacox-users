@@ -63,9 +63,11 @@ public class LoginController {
             , @Parameter(hidden = true) Pageable pageable
             , @RequestParam(required = false) String filter, @RequestParam(required = false) Integer page
             , @RequestParam(required = false) Integer size, @RequestParam(required = false) String sort
-            , @RequestParam(required = false) String alternativeHeaders) {
+            , @RequestParam(required = false) String alternativeHeaders
+            , @RequestParam(required = false) String excludeColumns) {
 
-        ByteArrayResource resource = loginService.exportExcel(spec, pageable, ParseUtils.parseAlternativeHeaders(alternativeHeaders));
+        ByteArrayResource resource = loginService.exportExcel(spec, pageable
+                , ParseUtils.parseAlternativeHeaders(alternativeHeaders), ParseUtils.parseExcludeColumns(excludeColumns));
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=logins.xlsx")

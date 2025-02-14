@@ -33,38 +33,66 @@ public class GenericExcelGenerator {
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities) throws IOException {
-        return generateExcelInputStream(entities, Collections.emptySet(), Collections.emptyMap(), null);
+        return generateExcelInputStream(entities, Collections.emptySet(), Collections.emptyMap(), null, Collections.emptySet());
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields) throws IOException {
-        return generateExcelInputStream(entities, excludedFields, Collections.emptyMap(), null);
+        return generateExcelInputStream(entities, excludedFields, Collections.emptyMap(), null, Collections.emptySet());
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields, List<String> alternativeHeaders) throws IOException {
-        return generateExcelInputStream(entities, excludedFields, Collections.emptyMap(), alternativeHeaders);
+        return generateExcelInputStream(entities, excludedFields, Collections.emptyMap(), alternativeHeaders, Collections.emptySet());
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, Map<String, String> alternativeNames) throws IOException {
-        return generateExcelInputStream(entities, Collections.emptySet(), alternativeNames, null);
+        return generateExcelInputStream(entities, Collections.emptySet(), alternativeNames, null, Collections.emptySet());
+    }
+
+    public static <T> InputStream generateExcelInputStream(List<T> entities, Map<String, String> alternativeNames, Set<String> excludedColumnNames) throws IOException {
+        return generateExcelInputStream(entities, Collections.emptySet(), alternativeNames, null, excludedColumnNames);
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, List<String> alternativeHeaders) throws IOException {
-        return generateExcelInputStream(entities, Collections.emptySet(), Collections.emptyMap(), alternativeHeaders);
+        return generateExcelInputStream(entities, Collections.emptySet(), Collections.emptyMap(), alternativeHeaders, Collections.emptySet());
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields,
-                                                         Map<String, String> alternativeNames) throws IOException {
-        return generateExcelInputStream(entities, excludedFields, alternativeNames, null);
+                                                           Map<String, String> alternativeNames) throws IOException {
+        return generateExcelInputStream(entities, excludedFields, alternativeNames, null, Collections.emptySet());
+    }
+
+    public static <T> InputStream generateExcelInputStreamExcludeColumns(List<T> entities, Set<String> excludedColumnNames) throws IOException {
+        return generateExcelInputStream(entities, Collections.emptySet(), Collections.emptyMap(), null, excludedColumnNames);
     }
 
     public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields,
-                                                         Map<String, String> alternativeNames, List<String> alternativeHeaders) throws IOException {
+                                                           Map<String, String> alternativeNames, List<String> alternativeHeaders) throws IOException {
+        return generateExcelInputStream(entities, excludedFields, alternativeNames, alternativeHeaders, Collections.emptySet());
+    }
+
+    public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields,
+                                                           Map<String, String> alternativeNames,
+                                                           Set<String> excludedColumnNames) throws IOException {
+        return generateExcelInputStream(entities, excludedFields, alternativeNames, null, excludedColumnNames);
+    }
+
+
+    public static <T> InputStream generateExcelInputStream(List<T> entities, Set<String> excludedFields,
+                                                           Map<String, String> alternativeNames, List<String> alternativeHeaders,
+                                                           Set<String> excludedColumnNames) throws IOException {
         if (entities == null || entities.isEmpty()) {
             throw new IllegalArgumentException("Entity list cannot be empty");
         }
 
         Class<?> entityClass = entities.get(0).getClass();
         List<FieldInfo> fields = getExportableFields(entityClass, "", null, excludedFields, alternativeNames);
+
+        // Filter out fields whose display names are in excludedColumnNames
+        if (excludedColumnNames != null && !excludedColumnNames.isEmpty()) {
+            fields = fields.stream()
+                    .filter(field -> !excludedColumnNames.contains(field.displayName))
+                    .collect(Collectors.toList());
+        }
 
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet(entityClass.getSimpleName());
@@ -81,34 +109,52 @@ public class GenericExcelGenerator {
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath) throws IOException {
-        generateExcel(entities, filePath, Collections.emptySet(), Collections.emptyMap(), null);
+        generateExcel(entities, filePath, Collections.emptySet(), Collections.emptyMap(), null, Collections.emptySet());
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath, Set<String> excludedFields) throws IOException {
-        generateExcel(entities, filePath, excludedFields, Collections.emptyMap(), null);
+        generateExcel(entities, filePath, excludedFields, Collections.emptyMap(), null, Collections.emptySet());
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath, Map<String, String> alternativeNames) throws IOException {
-        generateExcel(entities, filePath, Collections.emptySet(), alternativeNames, null);
+        generateExcel(entities, filePath, Collections.emptySet(), alternativeNames, null, Collections.emptySet());
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath, List<String> alternativeHeaders) throws IOException {
-        generateExcel(entities, filePath, Collections.emptySet(), Collections.emptyMap(), alternativeHeaders);
+        generateExcel(entities, filePath, Collections.emptySet(), Collections.emptyMap(), alternativeHeaders, Collections.emptySet());
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath, Set<String> excludedFields,
-                                       Map<String, String> alternativeNames) throws IOException {
-        generateExcel(entities, filePath, excludedFields, alternativeNames, null);
+                                         Map<String, String> alternativeNames) throws IOException {
+        generateExcel(entities, filePath, excludedFields, alternativeNames, null, Collections.emptySet());
+    }
+
+    public static <T> void generateExcelExcludeColumns(List<T> entities, String filePath,
+                                                       Set<String> excludedColumnNames) throws IOException {
+        generateExcel(entities, filePath, Collections.emptySet(), Collections.emptyMap(), null, excludedColumnNames);
     }
 
     public static <T> void generateExcel(List<T> entities, String filePath, Set<String> excludedFields,
-                                       Map<String, String> alternativeNames, List<String> alternativeHeaders) throws IOException {
+                                         Map<String, String> alternativeNames, List<String> alternativeHeaders) throws IOException {
+        generateExcel(entities, filePath, excludedFields, alternativeNames, alternativeHeaders, Collections.emptySet());
+    }
+
+    public static <T> void generateExcel(List<T> entities, String filePath, Set<String> excludedFields,
+                                         Map<String, String> alternativeNames, List<String> alternativeHeaders,
+                                         Set<String> excludedColumnNames) throws IOException {
         if (entities == null || entities.isEmpty()) {
             throw new IllegalArgumentException("Entity list cannot be empty");
         }
 
         Class<?> entityClass = entities.get(0).getClass();
         List<FieldInfo> fields = getExportableFields(entityClass, "", null, excludedFields, alternativeNames);
+
+        // Filter out fields whose display names are in excludedColumnNames
+        if (excludedColumnNames != null && !excludedColumnNames.isEmpty()) {
+            fields = fields.stream()
+                    .filter(field -> !excludedColumnNames.contains(field.displayName))
+                    .collect(Collectors.toList());
+        }
 
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet(entityClass.getSimpleName());
@@ -124,7 +170,7 @@ public class GenericExcelGenerator {
     }
 
     private static List<FieldInfo> getExportableFields(Class<?> clazz, String prefix, Field[] parentPath,
-                                                      Set<String> excludedFields, Map<String, String> alternativeNames) {
+                                                       Set<String> excludedFields, Map<String, String> alternativeNames) {
         List<FieldInfo> fields = new ArrayList<>();
 
         for (Field field : clazz.getDeclaredFields()) {
@@ -242,8 +288,8 @@ public class GenericExcelGenerator {
     }
 
     private static <T> void setFieldValue(Cell cell, T entity, FieldInfo fieldInfo,
-                                        DateTimeFormatter dateFormatter,
-                                        DateTimeFormatter dateTimeFormatter) {
+                                          DateTimeFormatter dateFormatter,
+                                          DateTimeFormatter dateTimeFormatter) {
         try {
             Object value = getFieldValue(entity, fieldInfo.fieldPath);
 

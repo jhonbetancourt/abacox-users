@@ -133,10 +133,11 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                 .toList();
     }
 
-    public ByteArrayResource exportExcel(Specification<User> specification, Pageable pageable, Map<String, String> alternativeHeaders) {
+    public ByteArrayResource exportExcel(Specification<User> specification, Pageable pageable, Map<String, String> alternativeHeaders, Set<String> excludeColumns) {
         Page<User> collection = find(specification, pageable);
         try {
-            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), Set.of("password"), alternativeHeaders);
+            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList()
+                    , Set.of("password"), alternativeHeaders, excludeColumns);
             return new ByteArrayResource(inputStream.readAllBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);

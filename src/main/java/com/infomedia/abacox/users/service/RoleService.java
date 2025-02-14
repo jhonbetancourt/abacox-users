@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -65,10 +66,10 @@ public class RoleService extends CrudService<Role, UUID, RoleRepository> {
                 .orElseThrow(() -> new ResourceNotFoundException(Role.class, "rolename "+ "admin"));
     }
 
-    public ByteArrayResource exportExcel(Specification<Role> specification, Pageable pageable, Map<String, String> alternativeHeaders) {
+    public ByteArrayResource exportExcel(Specification<Role> specification, Pageable pageable, Map<String, String> alternativeHeaders, Set<String> excludeColumns) {
         Page<Role> collection = find(specification, pageable);
         try {
-            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), alternativeHeaders);
+            InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList(), alternativeHeaders, excludeColumns);
             return new ByteArrayResource(inputStream.readAllBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
