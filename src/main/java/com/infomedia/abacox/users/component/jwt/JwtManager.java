@@ -119,7 +119,7 @@ public class JwtManager {
         try {
             jwtToken = new String(encryptor.decrypt(Base58.decode(downloadToken)), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new SecurityException(MSG_INVALID_TOKEN_FORMAT);
+            throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_FORMAT);
         }
         Jws<Claims> jwt = Jwts.parser().verifyWith(secret).build().parseSignedClaims(jwtToken);
         String mode = (String) jwt.getHeader().get("mod");

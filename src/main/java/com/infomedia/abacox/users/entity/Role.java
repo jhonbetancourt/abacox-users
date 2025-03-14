@@ -24,6 +24,6 @@ public class Role extends ActivableEntity {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-    @Column(name = "rolename", nullable = false, unique = true, length = 30)
+    @Column(name = "rolename", nullable = false, unique = true)
     private String rolename;
 }

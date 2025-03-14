@@ -6,6 +6,7 @@ import com.infomedia.abacox.users.exception.ResourceAlreadyExistsException;
 import com.infomedia.abacox.users.exception.ResourceDeletionException;
 import com.infomedia.abacox.users.exception.ResourceDisabledException;
 import com.infomedia.abacox.users.exception.ResourceNotFoundException;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import lombok.extern.log4j.Log4j2;
@@ -64,6 +65,24 @@ public class ExceptionHandlerConfig extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problemDetail.setTitle("Resource Deletion Error");
         problemDetail.setType(URI.create("resource-deletion-error"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ProblemDetail handleSecurityException(SecurityException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problemDetail.setTitle("Security Error");
+        problemDetail.setType(URI.create("security-error"));
+        problemDetail.setProperty("timestamp", LocalDateTime.now());
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ProblemDetail handleExpiredJwtException(ExpiredJwtException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problemDetail.setTitle("Expired JWT Token");
+        problemDetail.setType(URI.create("expired-jwt-token"));
         problemDetail.setProperty("timestamp", LocalDateTime.now());
         return problemDetail;
     }

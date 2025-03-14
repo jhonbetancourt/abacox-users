@@ -23,7 +23,7 @@ public class CreateRole {
     private String name;
 
     @NotBlank
-    @Size(min = 3, max = 30)
+    @Size(min = 3, max = 255)
     @Pattern(regexp = Regexp.ROLENAME, message = Regexp.MSG_ROLENAME)
     @Schema(description = "Internal name", example = "admin")
     private String rolename;

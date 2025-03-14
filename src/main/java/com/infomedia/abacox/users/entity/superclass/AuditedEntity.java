@@ -30,7 +30,7 @@ public class AuditedEntity {
     private LocalDateTime createdDate;
 
     @CreatedBy
-    @Column(name = "created_by", updatable = false, length = 30)
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
     @Column(name = "last_modified_date")
@@ -38,6 +38,6 @@ public class AuditedEntity {
     private LocalDateTime lastModifiedDate;
 
     @LastModifiedBy
-    @Column(name = "last_modified_by", length = 30)
+    @Column(name = "last_modified_by")
     private String lastModifiedBy;
 }

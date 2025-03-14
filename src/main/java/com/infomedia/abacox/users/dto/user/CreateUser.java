@@ -24,7 +24,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class CreateUser {
     @NotBlank
-    @Size(min = 3, max = 30)
+    @Size(min = 3, max = 255)
     @Pattern(regexp = Regexp.USERNAME, message = Regexp.MSG_USERNAME)
     @Schema(example = "username", description = "Username of the user")
     private String username;
