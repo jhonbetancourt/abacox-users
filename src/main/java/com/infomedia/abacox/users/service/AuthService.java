@@ -1,9 +1,11 @@
 package com.infomedia.abacox.users.service;
 
+import com.infomedia.abacox.users.component.configmanager.ConfigService;
+import com.infomedia.abacox.users.component.configmanager.Value;
 import com.infomedia.abacox.users.component.jwt.InvalidJwtTokenException;
 import com.infomedia.abacox.users.component.jwt.JwtManager;
 import com.infomedia.abacox.users.component.modeltools.ModelConverter;
-import com.infomedia.abacox.users.constants.ConfigKey;
+import com.infomedia.abacox.users.component.configmanager.ConfigKey;
 import com.infomedia.abacox.users.dto.auth.JwtTokenInfoDto;
 import com.infomedia.abacox.users.dto.auth.TokenRequestDto;
 import com.infomedia.abacox.users.dto.auth.TokenResultDto;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -31,25 +34,16 @@ public class AuthService {
     private final UserService userService;
     private final ModelConverter modelConverter;
     private final LoginService loginService;
-    private final ConfigurationService configurationService;
+    private final ConfigService configService;
     private boolean singleSession = false;
 
     @PostConstruct
     public void init(){
-        singleSession = configurationService.getAsBoolean(ConfigKey.SINGLE_SESSION).orElse(false);
-        jwtManager.setRefreshTokenDurationSec(configurationService.getAsLong(ConfigKey.SESSION_MAX_AGE).orElse(43200L));
-        configurationService.registerUpdateCallback(ConfigKey.SESSION_MAX_AGE, new ConfigurationService.UpdateCallback() {
-            @Override
-            public <T> void onUpdate(T value) {
-                jwtManager.setRefreshTokenDurationSec((Long) value);
-            }
-        });
-        configurationService.registerUpdateCallback(ConfigKey.SINGLE_SESSION, new ConfigurationService.UpdateCallback() {
-            @Override
-            public <T> void onUpdate(T value) {
-                singleSession = (Boolean) value;
-            }
-        });
+        singleSession = configService.getValue(ConfigKey.SINGLE_SESSION).asBoolean();
+        Long sessionMaxAge = configService.getValue(ConfigKey.SESSION_MAX_AGE).asLong();
+        jwtManager.setRefreshTokenDurationSec(sessionMaxAge);
+        configService.registerUpdateCallback(ConfigKey.SESSION_MAX_AGE, v -> jwtManager.setRefreshTokenDurationSec(v.asLong()));
+        configService.registerUpdateCallback(ConfigKey.SINGLE_SESSION, v -> singleSession = v.asBoolean());
     }
 
     @Transactional

@@ -12,4 +12,5 @@ import lombok.experimental.SuperBuilder;
 public class ConfigurationDto {
     private Boolean singleSession;
     private Integer sessionMaxAge;
+    private Boolean recaptcha;
 }
