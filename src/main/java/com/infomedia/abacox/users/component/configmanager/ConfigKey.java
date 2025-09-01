@@ -14,8 +14,7 @@ public enum ConfigKey {
 
     // PUBLIC KEYS
     SINGLE_SESSION("false", true),
-    SESSION_MAX_AGE("86400", true), // Default is 1 day in seconds
-    RECAPTCHA("false", true);
+    SESSION_MAX_AGE("86400", true);
 
     private final String defaultValue;
     private final boolean isPublic;

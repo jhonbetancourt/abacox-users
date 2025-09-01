@@ -1,0 +1,16 @@
+# Use an official OpenJDK 21 runtime as a parent image
+# The '-slim' version is smaller and optimized for running applications
+FROM openjdk:21-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the fat jar into the container at /app
+# The JAR file must be in the 'target' directory after a 'mvn package' or 'gradle build'
+COPY target/*.jar app.jar
+
+# Make port 8080 available to the world outside this container
+EXPOSE 8080
+
+# Run the jar file
+ENTRYPOINT ["java","-jar","app.jar"]

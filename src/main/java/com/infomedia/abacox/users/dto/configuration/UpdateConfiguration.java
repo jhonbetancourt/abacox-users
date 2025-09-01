@@ -18,8 +18,4 @@ public class UpdateConfiguration {
     @NotNull
     @Schema(description = "maximum session age in seconds", example = "43200")
     private JsonNullable<Integer> sessionMaxAge = JsonNullable.undefined();
-
-    @NotNull
-    @Schema(description = "whether to enable reCAPTCHA", example = "false")
-    private JsonNullable<Boolean> recaptcha = JsonNullable.undefined();
 }
