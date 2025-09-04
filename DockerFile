@@ -1,16 +1,21 @@
-# Use an official OpenJDK 21 runtime as a parent image
-# The '-slim' version is smaller and optimized for running applications
+# Start from the base Java 21 slim image
 FROM openjdk:21-slim
 
-# Set the working directory in the container
+# --- ADD THIS BLOCK ---
+# As the root user, update the package list and install curl.
+# The '-y' flag auto-confirms the installation.
+# The '&& rm -rf ...' part cleans up the package cache to keep the final image size small.
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# --- END OF BLOCK ---
+
+# Set the working directory
 WORKDIR /app
 
-# Copy the fat jar into the container at /app
-# The JAR file must be in the 'target' directory after a 'mvn package' or 'gradle build'
+# Copy the compiled JAR file into the container
 COPY target/*.jar app.jar
 
-# Make port 8080 available to the world outside this container
+# Expose the application port
 EXPOSE 8080
 
-# Run the jar file
+# Define the command to run the application
 ENTRYPOINT ["java","-jar","app.jar"]

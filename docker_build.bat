@@ -1,0 +1,1 @@
+docker build -t abacox-users:1.0.0 .

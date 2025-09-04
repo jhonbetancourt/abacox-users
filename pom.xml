@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.infomedia.abacox</groupId>
 	<artifactId>users</artifactId>
-	<version>1.0</version>
+	<version>1.0.0</version>
 	<name>users</name>
 	<description>Modulo de usuarios de abacox</description>
 	<url/>

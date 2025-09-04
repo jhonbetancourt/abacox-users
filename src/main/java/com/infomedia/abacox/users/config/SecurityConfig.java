@@ -63,6 +63,7 @@ public class SecurityConfig {
                 , "/error"
                 , "/api/auth/**"
                 , "/api/module/**"
+                , "/api/health/**"
                 , "/websocket/module"};
     }
 
