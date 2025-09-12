@@ -42,8 +42,13 @@ public class JwtManager {
     private Long refreshTokenDurationSec;
     private final AES256BinaryEncryptor encryptor = new AES256BinaryEncryptor();
 
+    @Value("${abacox.client-name}")
+    private String clientName;
+
     private static final String MSG_INVALID_TOKEN_TYPE = "Invalid token type";
     private static final String MSG_INVALID_TOKEN_FORMAT = "Invalid token format";
+    private static final String MSG_INVALID_TOKEN = "Invalid token";
+    private static final String DOWNLOAD_TOKEN_PREFIX = "DL_";
 
     @PostConstruct
     private void init() {
@@ -61,6 +66,7 @@ public class JwtManager {
                 .add("typ", "JWT")
                 .add("mod", Mode.ACCESS.name())
                 .and()
+                .claim("clt", clientName)
                 .expiration(expiration)
                 .notBefore(now)
                 .issuedAt(now)
@@ -74,11 +80,13 @@ public class JwtManager {
         LocalDateTime nowLdt = LocalDateTime.now();
         Date now = Timestamp.valueOf(nowLdt);
         Date expiration = Timestamp.valueOf(nowLdt.plusSeconds(downloadTokenDuration));
-        return new TokenInfo(Base58.encode(encryptor.encrypt(Jwts.builder()
+        return new TokenInfo(DOWNLOAD_TOKEN_PREFIX+Base58.encode(encryptor.encrypt(Jwts.builder()
                 .claims(claims).header()
                 .add("typ", "JWT")
                 .add("mod", Mode.DOWNLOAD.name())
+                .add("su", true)
                 .and()
+                .claim("clt", clientName)
                 .expiration(expiration)
                 .notBefore(now)
                 .issuedAt(now)
@@ -98,6 +106,7 @@ public class JwtManager {
                 .add("typ", "JWT")
                 .add("mod", Mode.REFRESH.name())
                 .and()
+                .claim("clt", clientName)
                 .expiration(expiration)
                 .notBefore(now)
                 .issuedAt(now)
@@ -111,13 +120,27 @@ public class JwtManager {
         if (mode == null || !mode.equals(Mode.ACCESS.name())) {
             throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_TYPE);
         }
+        validateClient(jwt.getPayload());
         return jwt.getPayload();
     }
 
+    private void validateClient(Claims claims){
+        String tokenClient = claims.get("clt", String.class);
+        if(tokenClient==null||!tokenClient.equals(clientName)){
+            throw new InvalidJwtTokenException(MSG_INVALID_TOKEN);
+        }
+    }
+
     public Claims validateDownloadToken(@NonNull String downloadToken) {
+        String tokenWithoutPrefix;
+        if (downloadToken.startsWith(DOWNLOAD_TOKEN_PREFIX)) {
+            tokenWithoutPrefix = downloadToken.substring(DOWNLOAD_TOKEN_PREFIX.length());
+        } else {
+            throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_FORMAT);
+        }
         String jwtToken;
         try {
-            jwtToken = new String(encryptor.decrypt(Base58.decode(downloadToken)), StandardCharsets.UTF_8);
+            jwtToken = new String(encryptor.decrypt(Base58.decode(tokenWithoutPrefix)), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_FORMAT);
         }
@@ -126,6 +149,7 @@ public class JwtManager {
         if (mode == null || !mode.equals(Mode.DOWNLOAD.name())) {
             throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_TYPE);
         }
+        validateClient(jwt.getPayload());
         return jwt.getPayload();
     }
 
@@ -135,6 +159,7 @@ public class JwtManager {
         if (mode == null || !mode.equals(Mode.REFRESH.name())) {
             throw new InvalidJwtTokenException(MSG_INVALID_TOKEN_TYPE);
         }
+        validateClient(jwt.getPayload());
         return jwt.getPayload();
     }
 
