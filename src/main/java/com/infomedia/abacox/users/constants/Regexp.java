@@ -4,7 +4,7 @@ package com.infomedia.abacox.users.constants;
 import java.util.regex.Pattern;
 
 public class Regexp {
-    public static final String USERNAME = "^[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)*$";
+    public static final String USERNAME = "^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$";
     public static final String ROLENAME = "^[a-z0-9][a-z0-9-]*(?:-[a-z0-9]+)*$";
     public static final String PASSWORD = "^(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?])(?=.*\\d)(?=.*[A-Z])(?=.*[a-z]).*$";
     public static final String EMAIL = "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*" +

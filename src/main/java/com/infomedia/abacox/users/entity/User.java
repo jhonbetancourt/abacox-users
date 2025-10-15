@@ -1,5 +1,6 @@
 package com.infomedia.abacox.users.entity;
 
+import com.infomedia.abacox.users.constants.PasswordEncodingAlgorithm;
 import com.infomedia.abacox.users.entity.superclass.ActivableEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -47,4 +48,14 @@ public class User extends ActivableEntity {
     @ManyToOne(optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
+
+    // --- NEW FIELD ---
+    /**
+     * Specifies the encoding algorithm used for the password hash.
+     * A null value implies the system's default, modern algorithm (BCRYPT).
+     * This field is crucial for the on-demand password migration strategy.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "password_encoder", length = 20)
+    private PasswordEncodingAlgorithm passwordEncoder;
 }

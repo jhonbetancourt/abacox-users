@@ -1,6 +1,5 @@
 package com.infomedia.abacox.users.controller;
 
-import com.infomedia.abacox.users.component.configmanager.ConfigKey;
 import com.infomedia.abacox.users.component.configmanager.ConfigService;
 import com.infomedia.abacox.users.component.modeltools.ModelConverter;
 import com.infomedia.abacox.users.dto.auth.TokenRequestDto;
@@ -10,7 +9,6 @@ import com.infomedia.abacox.users.dto.user.UserDto;
 import com.infomedia.abacox.users.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;

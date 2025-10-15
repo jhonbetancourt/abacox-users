@@ -1,11 +1,13 @@
 package com.infomedia.abacox.users.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.infomedia.abacox.users.component.legacy.Md5PasswordEncoder;
+import com.infomedia.abacox.users.constants.PasswordEncodingAlgorithm;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -25,13 +27,12 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -49,11 +50,6 @@ public class SecurityConfig {
         return authentication -> {
             throw new AuthenticationServiceException("Authentication is disabled");
         };
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
     }
 
     private String[] publicPaths() {
@@ -101,5 +97,40 @@ public class SecurityConfig {
 
             filterChain.doFilter(request, response);
         }
+    }
+
+    /**
+     * The primary, modern password encoder for creating new hashes.
+     * This bean is named "bcryptPasswordEncoder" by default because of the method name.
+     */
+    @Bean
+    @Primary
+    public PasswordEncoder bcryptPasswordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * A password encoder for validating legacy MD5 hashes during migration.
+     * This bean is named "md5PasswordEncoder" by default because of the method name.
+     */
+    @Bean
+    public PasswordEncoder md5PasswordEncoder() {
+        return new Md5PasswordEncoder();
+    }
+
+    /**
+     * A map of all available password encoders, keyed by our enum.
+     * This allows for a clean, delegating strategy in the authentication service.
+     * We use @Qualifier to tell Spring exactly which bean to inject for each parameter.
+     */
+    @Bean
+    public Map<PasswordEncodingAlgorithm, PasswordEncoder> passwordEncoders(
+            @Qualifier("bcryptPasswordEncoder") PasswordEncoder bcryptEncoder,
+            @Qualifier("md5PasswordEncoder") PasswordEncoder md5Encoder
+    ) {
+        return Map.of(
+                PasswordEncodingAlgorithm.BCRYPT, bcryptEncoder,
+                PasswordEncodingAlgorithm.MD5, md5Encoder
+        );
     }
 }

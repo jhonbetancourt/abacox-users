@@ -18,5 +18,5 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
     List<User> findByUsernameInAndActive(Collection<String> usernames, boolean active);
 
-
+    boolean existsByEmail(String email);
 }

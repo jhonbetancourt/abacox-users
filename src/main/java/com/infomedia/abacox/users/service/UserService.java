@@ -22,7 +22,9 @@ import java.util.*;
 @Service
 public class UserService extends CrudService<User, UUID, UserRepository> {
     private final RoleService roleService;
+    public static final List<String> INMUTABLE_USERS = List.of("system");
     private final PasswordEncoder passwordEncoder;
+
     public UserService(UserRepository repository, RoleService roleService, PasswordEncoder passwordEncoder) {
         super(repository);
         this.roleService = roleService;
@@ -59,16 +61,16 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
     @Transactional
     public User update(UUID id, UpdateUser uDto) {
         User user = buildFromDto(get(id), uDto);
-        if(user.getUsername().equals("system")){
-            throw new IllegalArgumentException("System user cannot be updated");
+        if(INMUTABLE_USERS.contains(user.getUsername())) {
+            throw new IllegalArgumentException("The user "+user.getUsername()+" cannot be modified");
         }
         return save(user);
     }
 
     @Override
     public User changeActivation(UUID id, boolean active) {
-        if(get(id).getUsername().equals("system")){
-            throw new IllegalArgumentException("System user cannot be deactivated");
+        if(INMUTABLE_USERS.contains(get(id).getUsername())) {
+            throw new IllegalArgumentException("The user "+get(id).getUsername()+" cannot be activated/deactivated");
         }
         return super.changeActivation(id, active);
     }
@@ -87,7 +89,7 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                     .email("system@abacox.com")
                     .firstName("System")
                     .lastName("System")
-                    .role(roleService.getDefaultRoleAdmin())
+                    .role(roleService.getDefaultRoleSystem())
                     .build();
             save(user);
         }
@@ -107,6 +109,12 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
                     .build();
             save(user);
         }
+    }
+
+    @Transactional
+    public void initDefaultUsers(){
+        initDefaultSystemUser();
+        initDefaultAdminUser();
     }
 
     @Transactional
@@ -137,7 +145,7 @@ public class UserService extends CrudService<User, UUID, UserRepository> {
         Page<User> collection = find(specification, pageable);
         try {
             InputStream inputStream = GenericExcelGenerator.generateExcelInputStream(collection.toList()
-                    , Set.of("password"), alternativeHeaders, excludeColumns);
+                    , Set.of("password", "passwordEncoder"), alternativeHeaders, excludeColumns);
             return new ByteArrayResource(inputStream.readAllBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);

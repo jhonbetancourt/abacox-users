@@ -1,11 +1,11 @@
 package com.infomedia.abacox.users.service;
 
 import com.infomedia.abacox.users.component.configmanager.ConfigService;
-import com.infomedia.abacox.users.component.configmanager.Value;
 import com.infomedia.abacox.users.component.jwt.InvalidJwtTokenException;
 import com.infomedia.abacox.users.component.jwt.JwtManager;
 import com.infomedia.abacox.users.component.modeltools.ModelConverter;
 import com.infomedia.abacox.users.component.configmanager.ConfigKey;
+import com.infomedia.abacox.users.constants.PasswordEncodingAlgorithm;
 import com.infomedia.abacox.users.dto.auth.JwtTokenInfoDto;
 import com.infomedia.abacox.users.dto.auth.TokenRequestDto;
 import com.infomedia.abacox.users.dto.auth.TokenResultDto;
@@ -15,6 +15,7 @@ import com.infomedia.abacox.users.entity.User;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,18 +24,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class AuthService {
 
     private final JwtManager jwtManager;
-    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
     private final ModelConverter modelConverter;
     private final LoginService loginService;
     private final ConfigService configService;
+    private final Map<PasswordEncodingAlgorithm, PasswordEncoder> passwordEncoders;
+    private final PasswordEncoder bcryptPasswordEncoder;
+
     private boolean singleSession = false;
 
     @PostConstruct
@@ -52,53 +55,85 @@ public class AuthService {
             throw new BadCredentialsException("Invalid credentials");
         }
 
-        User user = findActiveUser(tokenRequestDto.getUsername()).orElse(null);
+        User user = findActiveUser(tokenRequestDto.getUsername())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-        if(user!=null&&passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())){
+        validatePasswordAndUpgradeIfNecessary(user, tokenRequestDto.getPassword());
 
-            if(singleSession){
-                loginService.registerLogoutAll(user.getId());
-            }
-
-            Map<String, Object> claims1 = new HashMap<>();
-            Map<String, Object> claims2 = new HashMap<>();
-            claims1.put("userId", user.getId());
-            claims1.put("username", user.getUsername());
-            claims1.put("roleId", user.getRole().getId());
-            claims1.put("rolename", user.getRole().getName());
-            claims2.put("userId", user.getId());
-            claims2.put("username", user.getUsername());
-            claims2.put("roleId", user.getRole().getId());
-            claims2.put("rolename", user.getRole().getName());
-            JwtManager.TokenInfo refreshTokenInfo = jwtManager.generateRefreshToken(claims1);
-
-
-            Login login = loginService.registerLogin(user.getId(), refreshTokenInfo.getToken()
-                    , refreshTokenInfo.getIssuedAt(), refreshTokenInfo.getExpiration());
-
-            claims2.put("loginId", login.getId());
-
-            JwtManager.TokenInfo downloadTokenInfo = jwtManager.generateDownloadToken(claims2);
-            JwtManager.TokenInfo accessTokenInfo = jwtManager.generateAccessToken(claims2);
-
-            return TokenResultDto.builder()
-                    .user(modelConverter.map(user, UserDto.class))
-                    .accessToken(JwtTokenInfoDto.builder()
-                            .token(accessTokenInfo.getToken())
-                            .expiresIn(accessTokenInfo.getDuration())
-                            .build())
-                    .downloadToken(JwtTokenInfoDto.builder()
-                            .token(downloadTokenInfo.getToken())
-                            .expiresIn(downloadTokenInfo.getDuration())
-                            .build())
-                    .refreshToken(JwtTokenInfoDto.builder()
-                            .token(refreshTokenInfo.getToken())
-                            .expiresIn(refreshTokenInfo.getDuration())
-                            .build())
-                    .build();
+        // If we reach here, the password was correct. Proceed with token generation.
+        if(singleSession){
+            loginService.registerLogoutAll(user.getId());
         }
 
-        throw new BadCredentialsException("Invalid credentials");
+        Map<String, Object> claims1 = new HashMap<>();
+        Map<String, Object> claims2 = new HashMap<>();
+        claims1.put("userId", user.getId());
+        claims1.put("username", user.getUsername());
+        claims1.put("roleId", user.getRole().getId());
+        claims1.put("rolename", user.getRole().getName());
+        claims2.put("userId", user.getId());
+        claims2.put("username", user.getUsername());
+        claims2.put("roleId", user.getRole().getId());
+        claims2.put("rolename", user.getRole().getName());
+        JwtManager.TokenInfo refreshTokenInfo = jwtManager.generateRefreshToken(claims1);
+
+        Login login = loginService.registerLogin(user.getId(), refreshTokenInfo.getToken(),
+                refreshTokenInfo.getIssuedAt(), refreshTokenInfo.getExpiration());
+
+        claims2.put("loginId", login.getId());
+
+        JwtManager.TokenInfo downloadTokenInfo = jwtManager.generateDownloadToken(claims2);
+        JwtManager.TokenInfo accessTokenInfo = jwtManager.generateAccessToken(claims2);
+
+        return TokenResultDto.builder()
+                .user(modelConverter.map(user, UserDto.class))
+                .accessToken(JwtTokenInfoDto.builder()
+                        .token(accessTokenInfo.getToken())
+                        .expiresIn(accessTokenInfo.getDuration())
+                        .build())
+                .downloadToken(JwtTokenInfoDto.builder()
+                        .token(downloadTokenInfo.getToken())
+                        .expiresIn(downloadTokenInfo.getDuration())
+                        .build())
+                .refreshToken(JwtTokenInfoDto.builder()
+                        .token(refreshTokenInfo.getToken())
+                        .expiresIn(refreshTokenInfo.getDuration())
+                        .build())
+                .build();
+    }
+
+    /**
+     * Checks a user's provided password against their stored hash.
+     * If the stored hash uses a legacy algorithm (e.g., MD5) and the password is correct,
+     * it atomically upgrades the hash to the modern BCRYPT algorithm.
+     *
+     * @param user The user entity attempting to authenticate.
+     * @param rawPassword The plain-text password provided by the user.
+     * @throws BadCredentialsException if the password does not match.
+     */
+    private void validatePasswordAndUpgradeIfNecessary(User user, String rawPassword) {
+        // 1. Determine which encoding algorithm to use
+        PasswordEncodingAlgorithm algorithm = user.getPasswordEncoder() == null
+                ? PasswordEncodingAlgorithm.BCRYPT // Null means default (Bcrypt)
+                : user.getPasswordEncoder();
+
+        PasswordEncoder encoder = passwordEncoders.get(algorithm);
+        if (encoder == null) {
+            log.error("No password encoder configured for algorithm: {}. Denying login for user '{}'.", algorithm, user.getUsername());
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        // 2. Validate the password using the determined encoder
+        if (!encoder.matches(rawPassword, user.getPassword())) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
+        // 3. (CRITICAL) If it was a legacy algorithm, upgrade the password now
+        if (algorithm == PasswordEncodingAlgorithm.MD5) {
+            user.setPassword(bcryptPasswordEncoder.encode(rawPassword));
+            user.setPasswordEncoder(null); // Set to null to mark it as upgraded to the default
+            userService.save(user); // The transaction from token() will commit this change
+        }
     }
 
     public TokenResultDto refresh(String token) {
@@ -122,7 +157,6 @@ public class AuthService {
         JwtManager.TokenInfo accessTokenInfo = jwtManager.generateAccessToken(newClaims);
         JwtManager.TokenInfo downloadTokenInfo = jwtManager.generateDownloadToken(newClaims);
 
-        // Get the expiration time of the original refresh token
         Date refreshTokenExpiration = claims.getExpiration();
         long currentTimeMillis = System.currentTimeMillis();
         long refreshTokenDurationSeconds = Math.max(0, (refreshTokenExpiration.getTime() - currentTimeMillis) / 1000);
@@ -138,8 +172,8 @@ public class AuthService {
                         .expiresIn(downloadTokenInfo.getDuration())
                         .build())
                 .refreshToken(JwtTokenInfoDto.builder()
-                        .token(token)  // Use the original refresh token
-                        .expiresIn(refreshTokenDurationSeconds)  // Use the remaining duration in seconds
+                        .token(token)
+                        .expiresIn(refreshTokenDurationSeconds)
                         .build())
                 .build();
     }

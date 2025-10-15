@@ -15,8 +15,7 @@ public class InitService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        roleService.initDefaultAdminRole();
-        userService.initDefaultSystemUser();
-        userService.initDefaultAdminUser();
+        roleService.initDefaultRoles();
+        userService.initDefaultUsers();
     }
 }
